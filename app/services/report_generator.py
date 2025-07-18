@@ -188,7 +188,8 @@ class ReportGenerator:
         return BonusAnalytics(
             off_market_probability=ai_insights.get("off_market_probability", "50% - Moderate off-market potential"),
             ai_grade=ai_insights.get("ai_grade", "B"),
-            rebuild_vs_rehab=ai_insights.get("rebuild_vs_rehab", "Renovation approach recommendation available")
+            rebuild_vs_rehab=ai_insights.get("rebuild_vs_rehab", "Renovation approach recommendation available"),
+            cold_outreach_script=ai_insights.get("cold_outreach_script", "Professional outreach script generated based on property analysis.")
         )
     
     async def health_check(self) -> Dict[str, Any]:
@@ -255,9 +256,9 @@ class ReportGenerator:
                     "fields": ["investor_summary", "target_buyer", "seller_motivation", "outreach_approach"]
                 },
                 "8_bonus_analytics": {
-                    "description": "🔒 AI probability scores and grades",
+                    "description": "🔒 AI probability scores and grades + cold outreach script",
                     "data_sources": ["Claude AI"],
-                    "fields": ["off_market_probability", "ai_grade", "rebuild_vs_rehab"]
+                    "fields": ["off_market_probability", "ai_grade", "rebuild_vs_rehab", "cold_outreach_script"]
                 }
             }
         }
