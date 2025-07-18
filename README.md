@@ -1,254 +1,291 @@
-# PropertyAI Pro - AI-Powered Real Estate Investment Platform
+# AlyProp - $5 AI Property Report Service
 
-A comprehensive real estate investment analysis platform powered by AI that provides deep insights, ROI calculations, and market analysis for properties nationwide.
+🏠 **AI-powered property analysis for real estate investors and first-time homebuyers**
 
-## 🌟 Features
+Generate comprehensive $5 property reports combining Estated's professional property data with Claude AI's investment insights. Perfect for investors, flippers, and first-time buyers who need actionable intelligence on any property.
 
-- **AI-Powered Property Analysis**: Claude 3 Haiku provides detailed investment insights
-- **Pay-As-You-Go Model**: $5 per property analysis with no subscription required
-- **Comprehensive Financial Analysis**: ROI, cash flow, cap rates, and more
-- **Market Context**: Local comparables, price trends, and neighborhood insights
-- **Risk Assessment**: AI identifies potential red flags and risks
-- **Multiple Investment Strategies**: Support for rental, flip, BRRRR, and wholesale strategies
-- **Cross-Platform**: Web application and mobile app (React Native)
-- **Nationwide Coverage**: Property data from all 50 states
+## 🧠 Report Sections (8 Total)
 
-## 🏗️ Architecture
+### 1. 🏠 Property Overview
+- **Data Source:** Estated + Claude AI
+- Full address, parcel ID, property type, year built
+- Square footage, lot size, bed/bath count
+- Legal description/zoning + AI summary
 
-This is a monorepo containing:
+### 2. 👤 Ownership & Sale History  
+- **Data Source:** Estated + Claude AI
+- Owner name and mailing address
+- Last sale price and date
+- AI-calculated ownership duration + absentee status
+- Seller motivation analysis
 
-- **Web App** (`apps/web`): Next.js 14 with React, TypeScript, and Tailwind CSS
-- **Mobile App** (`apps/mobile`): React Native for iOS and Android
-- **API Backend** (`apps/api`): Node.js with Express, TypeScript, and PostgreSQL
-- **Shared Packages** (`packages/`): Common utilities and configurations
+### 3. 💵 Estimated Equity Position
+- **Data Source:** Estated + Claude AI  
+- Estimated value (AVM) and tax assessed value
+- Property tax amount
+- AI equity calculations + tax vs AVM comparison
+
+### 4. 🔁 Investment Strategy Insight
+- **Data Source:** Claude AI
+- Flip potential rating (A-F scale)
+- Buy-and-hold rental assessment
+- BRRRR strategy fit analysis
+- Primary strategy recommendation
+
+### 5. 🧭 Neighborhood & Walkability Context
+- **Data Source:** Estated + Claude AI
+- City, ZIP, county information
+- AI walkability and transit access estimates
+- School zone quality assessment
+- Community type description
+
+### 6. ⚠️ Risk & Red Flags
+- **Data Source:** Claude AI
+- Age + ownership duration rehab needs
+- Tax under-assessment risks
+- Absentee owner implications
+- Structural/age concern warnings
+
+### 7. 📊 AI Investor Snapshot Summary
+- **Data Source:** Claude AI
+- Comprehensive investor opportunity summary
+- Target buyer identification (first-time, flipper, etc.)
+- Seller motivation scoring
+- Outreach approach recommendations
+
+### 8. 🔒 Bonus Inferred Analytics
+- **Data Source:** Claude AI
+- Off-market probability score (0-100%)
+- Overall AI grade (A-F)
+- Rebuild vs rehab recommendations
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-
-- Node.js 18+ 
-- PostgreSQL 14+
-- Redis (optional, for caching)
-- Yarn or npm
+- Python 3.8+
+- Estated API key (PAYG subscription)
+- Anthropic API key (Claude access)
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd real-estate-ai-platform
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/alyprop.git
+cd alyprop
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-3. **Environment Setup**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
+# Install dependencies
+pip install -r requirements.txt
 
-4. **Database Setup**
-   ```bash
-   # Create PostgreSQL database
-   createdb propertyai_pro
-   
-   # Run migrations (when available)
-   cd apps/api
-   npm run migrate
-   ```
+# Configure API keys
+cp .env.example .env
+# Edit .env with your API keys:
+# ESTATED_API_KEY=your_estated_key_here
+# ANTHROPIC_API_KEY=your_anthropic_key_here
+```
 
-5. **Start Development Servers**
-   ```bash
-   # Start all services
-   npm run dev
-   
-   # Or start individually:
-   cd apps/web && npm run dev      # Web app on :3000
-   cd apps/api && npm run dev      # API on :3001
-   cd apps/mobile && npm run start # Mobile app
-   ```
+### Running the Service
+
+```bash
+# Start the server
+python run.py
+
+# Or use uvicorn directly
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+The service will be available at:
+- 🌐 **API:** http://localhost:8000
+- 📚 **Documentation:** http://localhost:8000/docs
+- 🏥 **Health Check:** http://localhost:8000/health
+
+## 📡 API Usage
+
+### Generate Property Report
+
+```bash
+curl -X POST "http://localhost:8000/property/report" \
+     -H "Content-Type: application/json" \
+     -d '{"address": "1600 Amphitheatre Parkway, Mountain View, CA"}'
+```
+
+### Python Example
+
+```python
+import httpx
+import asyncio
+
+async def get_property_report():
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "http://localhost:8000/property/report",
+            json={"address": "123 Main Street, Anytown, USA"}
+        )
+        report = response.json()
+        print(f"Report ID: {report['report_id']}")
+        print(f"AI Grade: {report['bonus_analytics']['ai_grade']}")
+        return report
+
+# Run the example
+asyncio.run(get_property_report())
+```
+
+## 🧪 Testing
+
+```bash
+# Run comprehensive tests
+python test_property_report.py
+
+# Test without API keys (structure validation only)
+python test_property_report.py  # Will skip live API tests if keys missing
+```
+
+## 📁 Project Structure
+
+```
+alyprop/
+├── app/
+│   ├── __init__.py
+│   ├── main.py                 # FastAPI application
+│   ├── models.py               # Pydantic data models
+│   ├── config.py               # Configuration management
+│   └── services/
+│       ├── __init__.py
+│       ├── estated_client.py   # Estated API integration
+│       ├── ai_analyzer.py      # Claude AI analysis
+│       └── report_generator.py # Report orchestration
+├── requirements.txt            # Dependencies
+├── .env.example               # Environment template
+├── run.py                     # Application runner
+├── test_property_report.py    # Test suite
+└── README.md                  # This file
+```
+
+## 💰 Pricing
+
+- **$5.00 per property report**
+- Combines Estated PAYG pricing + Claude API costs
+- No subscription required - pay per use
+- Perfect for occasional investors or high-volume analysis
 
 ## 🔧 Configuration
 
-### Required API Keys
+### Environment Variables
 
-1. **Estated API** - For property data
-   - Sign up at [Estated.com](https://estated.com)
-   - Add `ESTATED_API_KEY` to your `.env`
+```bash
+# Required API Keys
+ESTATED_API_KEY=your_estated_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
 
-2. **Anthropic Claude** - For AI analysis
-   - Get API key from [Anthropic](https://console.anthropic.com)
-   - Add `ANTHROPIC_API_KEY` to your `.env`
+# Optional Configuration  
+APP_NAME="AlyProp $5 AI Property Report"
+VERSION="1.0.0"
+```
 
-3. **Stripe** - For payment processing
-   - Create account at [Stripe](https://stripe.com)
-   - Add `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY`
+### Estated API Setup
+1. Sign up at [Estated.com](https://estated.com)
+2. Subscribe to PAYG (Pay-As-You-Go) plan
+3. Get your API key from the dashboard
 
-### Optional Services
+### Anthropic API Setup
+1. Sign up at [Anthropic](https://anthropic.com)
+2. Get API access to Claude
+3. Generate an API key
 
-- **SendGrid** or **Mailchimp** - For email marketing/waitlist
-- **Redis** - For caching and session management
+## 🛠️ Development
 
-## 📱 Mobile App Setup
+### Adding New Analysis Features
 
-### iOS Development
+1. **Extend AI Prompts** in `app/services/ai_analyzer.py`
+2. **Update Data Models** in `app/models.py`
+3. **Modify Report Builder** in `app/services/report_generator.py`
 
-1. **Install Xcode** (Mac only)
-2. **Install iOS dependencies**
-   ```bash
-   cd apps/mobile/ios
-   pod install
-   ```
-3. **Run on iOS**
-   ```bash
-   cd apps/mobile
-   npm run ios
-   ```
+### Custom Estated Integration
 
-### Android Development
+The `EstatedClient` class in `app/services/estated_client.py` can be extended to:
+- Add new property data fields
+- Integrate additional Estated endpoints
+- Customize data parsing logic
 
-1. **Install Android Studio**
-2. **Set up Android SDK**
-3. **Run on Android**
-   ```bash
-   cd apps/mobile
-   npm run android
-   ```
+## 📊 Example Report Output
 
-## 🎯 Business Model
+```json
+{
+  "report_id": "abc12345",
+  "generated_at": "2024-01-15T10:30:00Z",
+  "cost": 5.00,
+  "property_overview": {
+    "full_address": "123 Main Street, Anytown, USA",
+    "property_type": "Single Family Residential",
+    "year_built": 1995,
+    "square_footage": 2400,
+    "bedrooms": 4,
+    "bathrooms": 2.5,
+    "ai_summary": "Well-maintained family home with strong rental potential..."
+  },
+  "investment_strategy": {
+    "flip_potential_rating": "B+ - Good flip potential with moderate renovation",
+    "buy_hold_assessment": "Strong rental income potential in desirable area",
+    "strategy_recommendation": "Recommend buy-and-hold for long-term appreciation"
+  },
+  "bonus_analytics": {
+    "off_market_probability": "75% - High likelihood of off-market opportunity",
+    "ai_grade": "B+",
+    "rebuild_vs_rehab": "Rehab recommended - structure in good condition"
+  }
+}
+```
 
-### Pay-As-You-Go ($5/search)
-- Perfect for casual investors
-- No subscription required
-- Instant property analysis
-- Full AI insights included
+## 🚨 Error Handling
 
-### Pro Subscription ($39.99/month) - Coming Soon
-- Unlimited property searches
-- Real-time deal alerts
-- Portfolio management tools
-- Advanced market analytics
-- API access
-- Export capabilities
+The API provides detailed error responses:
 
-## 🤖 AI Integration
+```json
+{
+  "error": "Property not found",
+  "detail": "No property data available for the provided address",
+  "status_code": 404
+}
+```
 
-### Claude 3 Haiku Analysis
+Common error scenarios:
+- **404:** Property not found in Estated database
+- **500:** API key issues or service errors
+- **503:** Service temporarily unavailable
 
-The platform uses Claude 3 Haiku to analyze properties and provide:
+## 🔐 Security Notes
 
-- **Deal Scoring**: 1-10 rating based on investment potential
-- **Strategy-Specific Insights**: Tailored to rental, flip, BRRRR, etc.
-- **Risk Assessment**: Identifies potential red flags
-- **Market Context**: Explains local market conditions
-- **Actionable Recommendations**: Specific next steps for investors
+- Never commit API keys to version control
+- Use environment variables for all secrets
+- Consider API rate limiting for production
+- Validate all input addresses
 
-### Prompt Engineering
+## 📞 Support
 
-AI prompts are optimized for:
-- Real estate investment terminology
-- Market-specific nuances
-- Risk factor identification
-- ROI optimization strategies
+For issues or questions:
+1. Check the API documentation at `/docs`
+2. Run the test suite to verify setup
+3. Review logs for detailed error information
 
-## 🗄️ Database Schema
+## 🎯 Use Cases
 
-### Core Tables
+**Perfect For:**
+- 🏘️ Real estate investors evaluating deals
+- 🏠 First-time homebuyers researching properties  
+- 🔄 House flippers assessing renovation potential
+- 📊 Agents providing client property insights
+- 💼 Wholesalers identifying motivated sellers
 
-- `properties` - Property basic information
-- `analyses` - AI analysis results
-- `users` - User accounts and preferences
-- `payments` - Transaction records
-- `waitlist` - Subscription waitlist signups
-
-## 🔒 Security
-
-- Rate limiting on all endpoints
-- JWT authentication
-- Input validation and sanitization
-- Secure payment processing with Stripe
-- Environment variable protection
-- CORS configuration
-
-## 🚀 Deployment
-
-### Production Deployment
-
-1. **Environment Variables**
-   ```bash
-   NODE_ENV=production
-   DATABASE_URL=your_production_db_url
-   # Add all other production keys
-   ```
-
-2. **Build Applications**
-   ```bash
-   npm run build
-   ```
-
-3. **Deploy Options**
-   - **Vercel** (recommended for web app)
-   - **Railway** or **Heroku** (for API)
-   - **App Store/Google Play** (for mobile)
-
-### Infrastructure Requirements
-
-- **Database**: PostgreSQL 14+ (AWS RDS, Supabase, etc.)
-- **Cache**: Redis (AWS ElastiCache, Redis Cloud)
-- **CDN**: For static assets
-- **Monitoring**: Application performance monitoring
-
-## 📊 Analytics & Monitoring
-
-- User behavior tracking
-- Property search analytics
-- Payment conversion metrics
-- API performance monitoring
-- Error tracking and alerting
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
-
-## 📄 License
-
-This project is proprietary software. All rights reserved.
-
-## 🆘 Support
-
-- Documentation: `/docs` (when available)
-- Issues: GitHub Issues
-- Email: support@propertyaipro.com
-
-## 🎯 Roadmap
-
-### Phase 1 (Current)
-- [x] Basic property analysis
-- [x] Pay-as-you-go payments
-- [x] Web application
-- [x] Mobile app foundation
-
-### Phase 2 (Next 3 months)
-- [ ] Pro subscription launch
-- [ ] Deal alerts system
-- [ ] Portfolio management
-- [ ] API for developers
-
-### Phase 3 (6 months)
-- [ ] Advanced market analytics
-- [ ] Multi-market analysis
-- [ ] Partnership integrations
-- [ ] White-label solutions
+**Key Benefits:**
+- ⚡ Fast 30-second report generation
+- 🎯 Investor-focused insights and recommendations
+- 💡 AI-powered risk and opportunity identification
+- 📈 Professional-grade data from Estated
+- 💰 Affordable $5 per report pricing
 
 ---
 
-**PropertyAI Pro** - Democratizing real estate investment intelligence with AI.
+**Built with:** FastAPI • Claude AI • Estated API • Python 3.8+
