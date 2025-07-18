@@ -141,8 +141,15 @@ export class PropertyAnalysisService {
   }
 
   private buildAnalysisPrompt(propertyData: PropertyData, marketData: any, strategy: string): string {
-    return `
-You are a real estate investment expert analyzing a property for ${strategy} investment strategy.
+    const strategyPrompts = {
+      rental: this.buildRentalPrompt(propertyData, marketData),
+      flip: this.buildFlipPrompt(propertyData, marketData),
+      brrrr: this.buildBRRRRPrompt(propertyData, marketData),
+      wholesale: this.buildWholesalePrompt(propertyData, marketData)
+    };
+
+    const basePrompt = `
+You are a seasoned real estate investment expert with 20+ years of experience analyzing properties for ${strategy} investment strategy.
 
 Property Details:
 - Address: ${propertyData.address}
@@ -159,16 +166,87 @@ Market Context:
 - Price Appreciation: ${marketData.priceAppreciation}%
 - Average Days on Market: ${marketData.daysOnMarket}
 
-Investment Strategy: ${strategy.toUpperCase()}
+${strategyPrompts[strategy] || ''}
+
+CRITICAL ANALYSIS REQUIRED:
+
+1. **Valuation Assessment**: Is this home likely over- or under-valued for its neighborhood? Provide specific reasoning based on price per sqft vs comps.
+
+2. **Financing Eligibility**: Would this qualify for FHA financing, conventional loans, or would it likely require cash-only? Consider condition, age, and price point.
+
+3. **Red Flag Analysis**: What's the top red flag that would scare a smart investor? Be brutally honest about the biggest risk.
+
+4. **Market Position**: How does this property compare to similar investments in the area? Is it positioned competitively?
+
+5. **Exit Strategy**: What's the most realistic exit strategy and timeline for this investment?
 
 Please provide a comprehensive analysis in JSON format with:
-1. dealScore (1-10): Overall investment potential
-2. summary: 2-3 sentence overview of the investment opportunity
-3. strengths: Array of 3-4 positive factors
-4. risks: Array of 3-4 potential risks or concerns
-5. recommendations: Array of 3-4 specific actionable recommendations
+1. dealScore (1-10): Overall investment potential with harsh grading
+2. summary: 2-3 sentence overview highlighting the key opportunity or concern
+3. strengths: Array of 3-4 specific positive factors with numbers where possible
+4. risks: Array of 3-4 potential risks, with the top red flag first
+5. recommendations: Array of 3-4 specific actionable next steps
+6. valuationAssessment: "overvalued" | "market" | "undervalued" with reasoning
+7. financingLikelihood: "fha-eligible" | "conventional-only" | "cash-required" with explanation
+8. topRedFlag: Single biggest concern that could kill this deal
+9. marketPosition: How this compares to similar properties (better/worse/average)
+10. exitStrategy: Most realistic exit plan and timeline
 
-Focus on ${strategy}-specific insights and be specific about financial opportunities and risks.
+Be specific, use numbers, and don't sugarcoat problems. Focus on ${strategy}-specific insights.
+`;
+
+    return basePrompt;
+  }
+
+  private buildRentalPrompt(propertyData: PropertyData, marketData: any): string {
+    return `
+RENTAL INVESTMENT FOCUS:
+- Analyze rent-to-price ratio and cash flow potential
+- Evaluate tenant quality for this neighborhood
+- Consider property management requirements
+- Assess long-term appreciation vs cash flow strategy
+- Review local landlord regulations and rent control laws
+- Calculate 1% rule compliance (monthly rent should be 1% of purchase price)
+- Evaluate cap rate competitiveness for the market
+`;
+  }
+
+  private buildFlipPrompt(propertyData: PropertyData, marketData: any): string {
+    return `
+FIX & FLIP FOCUS:
+- Estimate renovation costs based on age and condition
+- Analyze ARV (After Repair Value) potential
+- Review comparable sales of renovated properties
+- Assess holding costs and timeline risks
+- Evaluate contractor availability and permit requirements
+- Calculate potential profit margins (aim for 20%+ ROI)
+- Identify highest-value renovation improvements
+`;
+  }
+
+  private buildBRRRRPrompt(propertyData: PropertyData, marketData: any): string {
+    return `
+BRRRR STRATEGY FOCUS:
+- Assess refinance potential after renovation
+- Analyze rental income after improvements
+- Evaluate forced appreciation opportunities
+- Review cash-out refinance requirements (70-80% LTV)
+- Consider renovation loan vs cash purchase
+- Calculate infinite return potential
+- Assess local rental demand for renovated units
+`;
+  }
+
+  private buildWholesalePrompt(propertyData: PropertyData, marketData: any): string {
+    return `
+WHOLESALE FOCUS:
+- Identify motivated seller indicators
+- Calculate maximum allowable offer (MAO) for investors
+- Assess assignment fee potential
+- Evaluate speed of sale requirements
+- Review property's appeal to fix-and-flip investors
+- Consider off-market deal potential
+- Analyze investor buyer pool in area
 `;
   }
 
@@ -183,13 +261,18 @@ Focus on ${strategy}-specific insights and be specific about financial opportuni
       logger.warn('Failed to parse AI response as JSON:', error);
     }
 
-    // Fallback parsing
+    // Fallback parsing with enhanced structure
     return {
       dealScore: 7.5,
       summary: text.split('\n')[0] || 'Analysis completed successfully.',
       strengths: ['Good investment opportunity', 'Favorable market conditions'],
       risks: ['Market volatility', 'Property condition unknown'],
-      recommendations: ['Conduct due diligence', 'Verify financial projections']
+      recommendations: ['Conduct due diligence', 'Verify financial projections'],
+      valuationAssessment: 'market',
+      financingLikelihood: 'conventional-only',
+      topRedFlag: 'Property condition requires thorough inspection',
+      marketPosition: 'average',
+      exitStrategy: 'Long-term hold with gradual appreciation'
     };
   }
 

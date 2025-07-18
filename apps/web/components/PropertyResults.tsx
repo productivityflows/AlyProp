@@ -9,8 +9,14 @@ import {
   ExclamationTriangleIcon,
   LightBulbIcon,
   TrendingUpIcon,
-  MapPinIcon
+  MapPinIcon,
+  ArrowDownTrayIcon,
+  ShareIcon,
+  DocumentDuplicateIcon
 } from '@heroicons/react/24/outline'
+import PostPurchaseSubscription from './PostPurchaseSubscription'
+import { downloadPDF, shareReport } from '../utils/pdfGenerator'
+import { toast } from 'react-hot-toast'
 
 interface PropertyResultsProps {
   propertyData: any
@@ -148,6 +154,50 @@ export default function PropertyResults({ propertyData, isLoading }: PropertyRes
           <p className="text-gray-900">{aiInsights.summary}</p>
         </div>
 
+        {/* Enhanced AI Insights Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* Valuation Assessment */}
+          <div className="p-4 border rounded-lg">
+            <h4 className="font-medium text-gray-900 mb-2">Valuation Assessment</h4>
+            <div className="flex items-center space-x-2">
+              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                aiInsights.valuationAssessment === 'undervalued' ? 'bg-success-100 text-success-800' :
+                aiInsights.valuationAssessment === 'overvalued' ? 'bg-red-100 text-red-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {aiInsights.valuationAssessment || 'Market Value'}
+              </span>
+            </div>
+          </div>
+
+          {/* Financing Likelihood */}
+          <div className="p-4 border rounded-lg">
+            <h4 className="font-medium text-gray-900 mb-2">Financing Options</h4>
+            <div className="flex items-center space-x-2">
+              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                aiInsights.financingLikelihood === 'fha-eligible' ? 'bg-success-100 text-success-800' :
+                aiInsights.financingLikelihood === 'cash-required' ? 'bg-red-100 text-red-800' :
+                'bg-blue-100 text-blue-800'
+              }`}>
+                {aiInsights.financingLikelihood || 'Conventional Only'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Top Red Flag Alert */}
+        {aiInsights.topRedFlag && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start">
+              <ExclamationTriangleIcon className="w-5 h-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
+              <div>
+                <h4 className="font-medium text-red-900 mb-1">⚠️ Top Red Flag</h4>
+                <p className="text-red-700 text-sm">{aiInsights.topRedFlag}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Strengths */}
           <div>
@@ -156,7 +206,7 @@ export default function PropertyResults({ propertyData, isLoading }: PropertyRes
               <h4 className="font-medium text-gray-900">Strengths</h4>
             </div>
             <ul className="space-y-2">
-              {aiInsights.strengths.map((strength: string, index: number) => (
+              {aiInsights.strengths?.map((strength: string, index: number) => (
                 <li key={index} className="text-sm text-gray-600 flex items-start">
                   <span className="w-2 h-2 bg-success-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
                   {strength}
@@ -172,7 +222,7 @@ export default function PropertyResults({ propertyData, isLoading }: PropertyRes
               <h4 className="font-medium text-gray-900">Risks</h4>
             </div>
             <ul className="space-y-2">
-              {aiInsights.risks.map((risk: string, index: number) => (
+              {aiInsights.risks?.map((risk: string, index: number) => (
                 <li key={index} className="text-sm text-gray-600 flex items-start">
                   <span className="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
                   {risk}
@@ -185,10 +235,10 @@ export default function PropertyResults({ propertyData, isLoading }: PropertyRes
           <div>
             <div className="flex items-center mb-3">
               <TrendingUpIcon className="w-5 h-5 text-primary-600 mr-2" />
-              <h4 className="font-medium text-gray-900">Recommendations</h4>
+              <h4 className="font-medium text-gray-900">Next Steps</h4>
             </div>
             <ul className="space-y-2">
-              {aiInsights.recommendations.map((rec: string, index: number) => (
+              {aiInsights.recommendations?.map((rec: string, index: number) => (
                 <li key={index} className="text-sm text-gray-600 flex items-start">
                   <span className="w-2 h-2 bg-primary-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
                   {rec}
@@ -197,6 +247,14 @@ export default function PropertyResults({ propertyData, isLoading }: PropertyRes
             </ul>
           </div>
         </div>
+
+        {/* Exit Strategy */}
+        {aiInsights.exitStrategy && (
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="font-medium text-blue-900 mb-2">🎯 Recommended Exit Strategy</h4>
+            <p className="text-blue-700 text-sm">{aiInsights.exitStrategy}</p>
+          </div>
+        )}
       </div>
 
       {/* Market Data */}
@@ -264,6 +322,40 @@ export default function PropertyResults({ propertyData, isLoading }: PropertyRes
         </div>
       </div>
 
+      {/* Cold Outreach Script */}
+      {(propertyData.strategy === 'wholesale' || propertyData.strategy === 'flip') && (
+        <div className="card">
+          <div className="flex items-center mb-6">
+            <CurrencyDollarIcon className="w-6 h-6 text-primary-600 mr-2" />
+            <h3 className="text-xl font-semibold text-gray-900">📝 Suggested Owner Outreach</h3>
+          </div>
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600 mb-3">AI-generated message template:</p>
+            <div className="bg-white p-4 rounded border border-gray-200">
+              <p className="text-gray-900 text-sm leading-relaxed">
+                Hi, I'm a local real estate investor and I noticed your property at {propertyData.address}. 
+                {aiInsights.dealScore >= 7 ? 
+                  " I'm very interested in making a fair cash offer that could close quickly with no contingencies." :
+                  " I work with investors who might be interested in purchasing your property for cash."
+                }
+                {propertyData.strategy === 'wholesale' ? 
+                  " I can connect you with serious buyers who close fast. Would you be open to a quick conversation about your property goals?" :
+                  " I buy properties in any condition and can close in as little as 2 weeks. Are you considering selling?"
+                }
+              </p>
+            </div>
+            <div className="mt-3 flex space-x-2">
+              <button className="text-xs bg-primary-100 text-primary-700 px-3 py-1 rounded hover:bg-primary-200">
+                Copy Message
+              </button>
+              <button className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded hover:bg-gray-200">
+                Generate Alternative
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Next Steps */}
       <div className="card bg-primary-50 border-primary-200">
         <div className="text-center">
@@ -272,15 +364,43 @@ export default function PropertyResults({ propertyData, isLoading }: PropertyRes
             Based on this analysis, this property shows {aiInsights.dealScore >= 7 ? 'strong' : 'moderate'} investment potential.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="btn-primary">
-              Export Full Report
+            <button 
+              onClick={() => {
+                downloadPDF(propertyData);
+                toast.success('Report downloaded successfully!');
+              }}
+              className="btn-primary inline-flex items-center"
+            >
+              <ArrowDownTrayIcon className="w-5 h-5 mr-2" />
+              📊 Export Full Report (PDF)
+            </button>
+            <button 
+              onClick={() => {
+                shareReport(propertyData);
+              }}
+              className="btn-secondary inline-flex items-center"
+            >
+              <ShareIcon className="w-5 h-5 mr-2" />
+              Share Report
             </button>
             <button className="btn-secondary">
-              Analyze Another Property
+              📈 Buy Comps Report (+$5)
+            </button>
+            <button 
+              onClick={() => window.location.href = '/search'}
+              className="btn-secondary"
+            >
+              🔍 Analyze Another Property
             </button>
           </div>
         </div>
       </div>
+
+      {/* Post-Purchase Subscription CTA */}
+      <PostPurchaseSubscription 
+        propertyAddress={propertyData.address}
+        dealScore={aiInsights.dealScore}
+      />
     </motion.div>
   )
 }
