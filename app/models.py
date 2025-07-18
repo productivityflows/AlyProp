@@ -90,6 +90,7 @@ class BonusAnalytics(BaseModel):
     off_market_probability: str = Field(..., description="Off-market probability score")
     ai_grade: str = Field(..., description="AI grade (A-F)")
     rebuild_vs_rehab: str = Field(..., description="Rebuild vs rehab recommendation")
+    cold_outreach_script: str = Field(..., description="Ready-to-use cold outreach script")
 
 
 class PropertyReportRequest(BaseModel):
