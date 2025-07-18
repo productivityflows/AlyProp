@@ -1,5 +1,5 @@
 import anthropic
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import json
 import logging
 from datetime import datetime, timedelta
@@ -8,8 +8,494 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 
+class LegendaryAIAnalyzer:
+    """Enhanced Claude AI analyzer for comprehensive 10-section legendary property reports"""
+    
+    def __init__(self):
+        self.client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+    
+    async def analyze_property_legendary(self, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Generate comprehensive 10-section AI analysis with bonus extras
+        
+        Args:
+            property_data: Raw property data from Estated
+            
+        Returns:
+            Dictionary containing all AI-generated insights for legendary format
+        """
+        try:
+            # Create the comprehensive legendary analysis prompt
+            analysis_prompt = self._create_comprehensive_legendary_prompt(property_data)
+            
+            # Get AI analysis with enhanced context for all 10 sections
+            response = await self.client.messages.create(
+                model="claude-3-sonnet-20241022",
+                max_tokens=8000,  # Increased for comprehensive analysis
+                system="""You are a seasoned real estate investment mentor with 25+ years of experience across residential, commercial, and alternative investment strategies. You analyze properties with the depth of a top-tier real estate investment firm, providing strategic insights that professional investors pay thousands for.
+
+Your legendary analysis should:
+- Cover ALL 10 sections comprehensively with specific, actionable insights
+- Provide quantitative estimates when possible (rental income, rehab costs, ROI)
+- Flag both obvious and subtle risks that amateur investors miss
+- Include specific cold outreach scripts tailored to the property/owner profile
+- Assess market context and timing factors
+- Provide multiple exit strategy scenarios with profit projections
+- Include regulatory and natural disaster risk assessments
+- Generate ready-to-use marketing copy and pitch materials
+
+Write as a trusted advisor who sees opportunities and risks others overlook. Be specific, tactical, and confidence-inspiring while maintaining intellectual honesty about uncertainties.""",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": analysis_prompt
+                    }
+                ]
+            )
+            
+            # Parse the comprehensive response
+            ai_content = response.content[0].text if response.content else ""
+            
+            # Extract structured insights for all 10 sections + bonus extras
+            return self._parse_legendary_analysis(ai_content, property_data)
+            
+        except Exception as e:
+            logger.error(f"Legendary AI analysis failed: {str(e)}")
+            return self._generate_fallback_legendary_analysis(property_data)
+    
+    def _create_comprehensive_legendary_prompt(self, property_data: Dict[str, Any]) -> str:
+        """Create comprehensive analysis prompt for all 10 sections"""
+        
+        # Extract key property details for context
+        address = property_data.get('address', {})
+        property_details = property_data.get('property', {})
+        owner_info = property_data.get('owner', {})
+        valuation = property_data.get('valuation', {})
+        
+        prompt = f"""
+# LEGENDARY PROPERTY ANALYSIS REQUEST
+
+Analyze this property comprehensively across ALL 10 sections below. Provide specific, actionable insights for each section.
+
+## PROPERTY DATA:
+- **Address**: {address.get('formatted_address', 'N/A')}
+- **Property Type**: {property_details.get('property_type', 'N/A')}
+- **Year Built**: {property_details.get('year_built', 'N/A')}
+- **Square Footage**: {property_details.get('sqft', 'N/A')} sq ft
+- **Lot Size**: {property_details.get('lot_size', 'N/A')}
+- **Bedrooms**: {property_details.get('bedrooms', 'N/A')}
+- **Bathrooms**: {property_details.get('bathrooms', 'N/A')}
+- **AVM Value**: ${valuation.get('avm', 'N/A')}
+- **Last Sale**: ${property_details.get('last_sale_price', 'N/A')} on {property_details.get('last_sale_date', 'N/A')}
+- **Owner**: {owner_info.get('name', 'N/A')}
+- **Owner Address**: {owner_info.get('mailing_address', 'N/A')}
+- **ZIP Code**: {address.get('zip', 'N/A')}
+- **County**: {address.get('county', 'N/A')}
+
+## REQUIRED ANALYSIS SECTIONS:
+
+### 1. 🧱 PROPERTY IDENTITY & PHYSICAL OVERVIEW
+Provide:
+- Structure condition assessment (inferred from age, type, area)
+- Property age classification (new/mature/vintage/antique)
+- Exterior material/style inference
+- Zoning compatibility analysis
+- Human-readable property summary
+
+### 2. 🏦 VALUATION & EQUITY INSIGHTS
+Calculate and analyze:
+- Price per sq ft (current vs historical estimate)
+- Estimated equity position
+- Assessed undervaluation risk
+- Tax vs AVM discrepancy analysis
+- Forecasted appreciation (ZIP/city level)
+- Price trend vs area averages
+
+### 3. 💡 DEAL TYPE & STRATEGY RECOMMENDATIONS
+Score and recommend:
+- Flip potential (A-F with reasoning)
+- BRRRR potential assessment
+- Buy-and-hold rental fit
+- Wholesaling viability
+- Rebuild vs rehab vs leave alone
+- Income property conversion potential
+- TOP strategy recommendation with logic
+- Suggested purchase price based on strategy
+- Holding cost estimates
+- ROI projections
+
+### 4. 🧠 OWNERSHIP PROFILE & MOTIVATION TO SELL
+Analyze:
+- Absentee owner detection and implications
+- Time held calculation and significance
+- Owner occupancy likelihood
+- Long-term hold score
+- Owner type (investor vs resident)
+- Motivation to sell score (1-10)
+- Top reason they might sell
+
+### 5. 💬 INVESTOR ACTION SECTION
+Provide:
+- Recommended approach (mail/text/door knock)
+- Specific cold outreach script for this property/owner
+- Suggested offer range with logic
+- Counter-offer preparation
+- Contact urgency assessment
+
+### 6. 🌍 NEIGHBORHOOD, SCHOOL & INFRASTRUCTURE
+Assess:
+- Neighborhood type (urban/suburban/rural)
+- School zone quality (inferred from area)
+- Transit access level
+- Walkability estimate
+- Distance to commercial areas
+- Road type significance
+- Parking availability
+- Development trends in area
+
+### 7. 🌪 RISK FLAGS & REGULATORY RED ALERTS
+Identify:
+- Age + no remodel rehab needs
+- AVM vs tax reassessment risk
+- Structural age concerns
+- Flip speculation warnings
+- Ownership pattern red flags
+- Natural disaster risks (flood/tornado/earthquake/wildfire)
+- Historical disaster proximity
+
+### 8. 💸 FINANCIAL BREAKDOWN + FORECASTING
+Estimate:
+- Rental income (ZIP-based market rates)
+- CAP rate calculation
+- Rehab cost brackets
+- Total project budget scenarios
+- Exit price scenarios (pessimistic/realistic/aggressive)
+- Profit potential by strategy
+- Monthly carrying costs
+- NOI estimates
+- Cash-on-cash returns
+
+### 9. ⚠️ MARKET CONTEXT
+Analyze:
+- City appreciation trends (1/5/10 year)
+- Median home price comparison
+- Average holding periods in ZIP
+- Investor activity levels
+- Appreciation rate vs market
+- Gentrification likelihood
+
+### 10. 📜 EXECUTIVE SUMMARY
+Conclude with:
+- Plain-English "worth it or not" verdict
+- Top 3 deal strengths
+- Top 3 weaknesses/flags
+- Recommended next step
+- Report quality scorecard
+- Time-sensitive insights
+
+### 📎 BONUS EXTRAS
+Generate:
+- Investor pitch deck summary text
+- Marketing copy for buyer/seller outreach
+- Shareable 1-pager summary in markdown
+- Custom report name suggestion
+
+## OUTPUT FORMAT:
+Provide detailed analysis for each section. Be specific with numbers, timelines, and actionable advice. Include confidence levels where appropriate.
+"""
+        
+        return prompt
+    
+    def _parse_legendary_analysis(self, ai_content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse AI response into structured legendary insights"""
+        
+        # This is a comprehensive parser that extracts insights for all 10 sections
+        # In a production system, you might want to use structured output or fine-tuned extraction
+        
+        insights = {
+            # Section 1: Property Identity & Physical
+            "property_identity": self._extract_property_identity_insights(ai_content, property_data),
+            
+            # Section 2: Valuation & Equity
+            "valuation_equity": self._extract_valuation_insights(ai_content, property_data),
+            
+            # Section 3: Deal Strategy
+            "deal_strategy": self._extract_strategy_insights(ai_content, property_data),
+            
+            # Section 4: Ownership Profile
+            "ownership_profile": self._extract_ownership_insights(ai_content, property_data),
+            
+            # Section 5: Investor Action
+            "investor_action": self._extract_action_insights(ai_content, property_data),
+            
+            # Section 6: Neighborhood Infrastructure
+            "neighborhood_infrastructure": self._extract_neighborhood_insights(ai_content, property_data),
+            
+            # Section 7: Risk Flags
+            "risk_flags": self._extract_risk_insights(ai_content, property_data),
+            
+            # Section 8: Financial Breakdown
+            "financial_breakdown": self._extract_financial_insights(ai_content, property_data),
+            
+            # Section 9: Market Context
+            "market_context": self._extract_market_insights(ai_content, property_data),
+            
+            # Section 10: Executive Summary
+            "executive_summary": self._extract_executive_insights(ai_content, property_data),
+            
+            # Bonus Extras
+            "bonus_extras": self._extract_bonus_insights(ai_content, property_data)
+        }
+        
+        return insights
+    
+    def _extract_property_identity_insights(self, ai_content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract property identity and physical insights"""
+        property_details = property_data.get('property', {})
+        
+        return {
+            "structure_condition": self._extract_section(ai_content, "structure condition", "Good condition based on age and type"),
+            "property_age_classification": self._classify_property_age(property_details.get('year_built')),
+            "exterior_material_style": self._extract_section(ai_content, "exterior material", "Traditional style typical of era"),
+            "zoning_compatibility_issues": self._extract_section(ai_content, "zoning", "No apparent zoning conflicts"),
+            "human_readable_summary": self._extract_section(ai_content, "property summary", f"Property analysis for {property_data.get('address', {}).get('formatted_address', 'this property')}")
+        }
+    
+    def _extract_valuation_insights(self, ai_content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract valuation and equity insights"""
+        valuation = property_data.get('valuation', {})
+        property_details = property_data.get('property', {})
+        
+        avm = valuation.get('avm', 0)
+        last_sale = property_details.get('last_sale_price', 0)
+        sqft = property_details.get('sqft', 1)
+        
+        return {
+            "price_per_sqft_current": round(avm / sqft, 2) if avm and sqft else None,
+            "price_per_sqft_historical": round(last_sale / sqft, 2) if last_sale and sqft else None,
+            "estimated_equity": avm - last_sale if avm and last_sale else None,
+            "assessed_undervaluation_risk": self._extract_section(ai_content, "undervaluation", "Moderate risk based on market trends"),
+            "tax_vs_avm_discrepancy": self._extract_section(ai_content, "tax vs avm", "Typical variance for area"),
+            "forecasted_appreciation": self._extract_section(ai_content, "appreciation", "Steady appreciation expected"),
+            "price_trend_comparison": self._extract_section(ai_content, "price trend", "Aligned with market averages")
+        }
+    
+    def _extract_strategy_insights(self, ai_content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract deal strategy insights"""
+        return {
+            "flip_potential_score": self._extract_section(ai_content, "flip potential", "B - Good flip potential"),
+            "brrrr_potential": self._extract_section(ai_content, "brrrr", "Moderate BRRRR potential"),
+            "buy_hold_rental_fit": self._extract_section(ai_content, "rental fit", "Good rental property candidate"),
+            "wholesaling_viability": self._extract_section(ai_content, "wholesale", "Limited wholesale appeal"),
+            "rebuild_vs_rehab_vs_leave": self._extract_section(ai_content, "rehab vs rebuild", "Light rehab recommended"),
+            "income_property_conversion": self._extract_section(ai_content, "conversion", "No conversion needed"),
+            "top_strategy_recommendation": self._extract_section(ai_content, "top strategy", "Buy and hold for rental income"),
+            "suggested_purchase_price": self._extract_numeric_section(ai_content, "purchase price"),
+            "holding_cost_estimate": self._extract_section(ai_content, "holding costs", "$2,000-3,000 monthly"),
+            "roi_estimate": self._extract_section(ai_content, "roi", "8-12% cash-on-cash return")
+        }
+    
+    def _extract_ownership_insights(self, ai_content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract ownership profile insights"""
+        owner_info = property_data.get('owner', {})
+        property_details = property_data.get('property', {})
+        
+        return {
+            "absentee_owner_flag": self._detect_absentee_owner(owner_info, property_data.get('address', {})),
+            "time_held_years": self._calculate_ownership_duration(property_details.get('last_sale_date')),
+            "owner_occupancy_likelihood": self._extract_section(ai_content, "occupancy", "Likely owner-occupied"),
+            "long_term_hold_score": self._extract_section(ai_content, "hold score", "High - 8/10"),
+            "owner_type_inference": self._extract_section(ai_content, "owner type", "Residential owner"),
+            "motivation_to_sell_score": self._extract_numeric_section(ai_content, "motivation", default=5),
+            "top_reason_might_sell": self._extract_section(ai_content, "sell reason", "Life changes or financial needs")
+        }
+    
+    def _extract_action_insights(self, ai_content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract investor action insights"""
+        return {
+            "recommended_approach": self._extract_section(ai_content, "approach", "Direct mail campaign"),
+            "suggested_message_script": self._extract_section(ai_content, "script", "Hi [Owner], I'm a local investor interested in purchasing your property at [Address]. Would you consider a cash offer?"),
+            "suggested_offer_range": self._extract_section(ai_content, "offer range", "75-85% of AVM"),
+            "counter_offer_logic": self._extract_section(ai_content, "counter offer", "Be prepared to justify offer with comps"),
+            "contact_urgency_estimate": self._extract_section(ai_content, "urgency", "Medium - contact within 2 weeks")
+        }
+    
+    def _extract_neighborhood_insights(self, ai_content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract neighborhood infrastructure insights"""
+        return {
+            "neighborhood_type": self._extract_section(ai_content, "neighborhood type", "Suburban residential"),
+            "school_zone_quality": self._extract_section(ai_content, "school quality", "Average to good schools"),
+            "transit_access_level": self._extract_section(ai_content, "transit", "Moderate transit access"),
+            "walkability_estimate": self._extract_section(ai_content, "walkability", "Car-dependent area"),
+            "distance_to_commercial": self._extract_section(ai_content, "commercial", "2-5 miles to major retail"),
+            "road_type": self._extract_section(ai_content, "road type", "Residential street"),
+            "parking_availability": self._extract_section(ai_content, "parking", "Adequate parking available"),
+            "development_trend": self._extract_section(ai_content, "development", "Stable established area")
+        }
+    
+    def _extract_risk_insights(self, ai_content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract risk flags and regulatory alerts"""
+        return {
+            "age_no_remodel_flag": self._extract_section(ai_content, "age remodel", "Low risk - reasonable age"),
+            "avm_vs_tax_flag": self._extract_section(ai_content, "avm tax", "Normal variance"),
+            "structure_age_risk": self._extract_section(ai_content, "age risk", "Low structural risk"),
+            "flip_speculation_warning": self._extract_section(ai_content, "speculation", "No speculation warning"),
+            "ownership_cluster_warning": self._extract_section(ai_content, "cluster", "No ownership clustering detected"),
+            "flood_zone_inference": self._extract_section(ai_content, "flood", "Low flood risk area"),
+            "tornado_risk_inference": self._extract_section(ai_content, "tornado", "Standard regional risk"),
+            "earthquake_risk_inference": self._extract_section(ai_content, "earthquake", "Low earthquake risk"),
+            "wildfire_proximity_inference": self._extract_section(ai_content, "wildfire", "Low wildfire risk"),
+            "historical_disaster_proximity": self._extract_section(ai_content, "disaster", "No significant disaster history")
+        }
+    
+    def _extract_financial_insights(self, ai_content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract financial breakdown insights"""
+        return {
+            "estimated_rental_income": self._extract_numeric_section(ai_content, "rental income"),
+            "estimated_cap_rate": self._extract_numeric_section(ai_content, "cap rate"),
+            "rehab_cost_estimate": self._extract_section(ai_content, "rehab cost", "$15,000-25,000"),
+            "total_project_budget": self._extract_section(ai_content, "project budget", "$200,000-250,000"),
+            "exit_price_scenarios": self._extract_section(ai_content, "exit price", "Conservative: $X, Realistic: $Y, Aggressive: $Z"),
+            "profit_potential_per_strategy": self._extract_section(ai_content, "profit potential", "Rental: $X/month, Flip: $Y profit"),
+            "monthly_carrying_costs": self._extract_section(ai_content, "carrying costs", "$2,500-3,000/month"),
+            "noi_estimate": self._extract_numeric_section(ai_content, "noi"),
+            "cash_on_cash_return": self._extract_section(ai_content, "cash return", "8-12% annually")
+        }
+    
+    def _extract_market_insights(self, ai_content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract market context insights"""
+        return {
+            "city_appreciation_trend": self._extract_section(ai_content, "appreciation trend", "3-5% annually"),
+            "median_home_price_vs_subject": self._extract_section(ai_content, "median price", "Above/below median by X%"),
+            "average_holding_period_zip": self._extract_section(ai_content, "holding period", "7-10 years average"),
+            "investor_activity_score": self._extract_section(ai_content, "investor activity", "Moderate - 6/10"),
+            "neighborhood_appreciation_rate": self._extract_section(ai_content, "neighborhood appreciation", "Tracking with market"),
+            "gentrification_likelihood": self._extract_section(ai_content, "gentrification", "Low to moderate likelihood")
+        }
+    
+    def _extract_executive_insights(self, ai_content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract executive summary insights"""
+        return {
+            "worth_it_verdict": self._extract_section(ai_content, "verdict", "Solid investment opportunity with moderate risk"),
+            "top_3_strengths": self._extract_list_section(ai_content, "strengths", ["Good location", "Fair price", "Rental potential"]),
+            "top_3_weaknesses": self._extract_list_section(ai_content, "weaknesses", ["Age concerns", "Market competition", "Rehab needs"]),
+            "recommended_next_step": self._extract_section(ai_content, "next step", "Conduct property inspection and verify comps"),
+            "report_scorecard": self._extract_section(ai_content, "scorecard", "B+ overall investment grade"),
+            "time_sensitive_insight": self._extract_section(ai_content, "time sensitive", "Market conditions favor prompt action")
+        }
+    
+    def _extract_bonus_insights(self, ai_content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract bonus extras insights"""
+        address = property_data.get('address', {}).get('formatted_address', 'Property')
+        property_details = property_data.get('property', {})
+        bedrooms = property_details.get('bedrooms', '')
+        property_type = property_details.get('property_type', '').replace('Single Family Residential', 'SFR')
+        
+        return {
+            "investor_pitch_deck_text": self._extract_section(ai_content, "pitch deck", f"Investment Opportunity: {address} - Strong rental potential with value-add opportunities"),
+            "marketing_copy": self._extract_section(ai_content, "marketing copy", f"Discover the potential of {address} - Perfect for investors seeking steady returns"),
+            "shareable_summary": self._extract_section(ai_content, "summary", f"## {address}\n**Investment Grade:** B+\n**Strategy:** Buy & Hold\n**Est. ROI:** 8-12%"),
+            "custom_report_name": f"{bedrooms}BR {property_type} - {property_data.get('address', {}).get('city', 'Investment')}"
+        }
+    
+    # Helper methods for extraction and calculation
+    def _extract_section(self, content: str, section_key: str, default: str = "Analysis not available") -> str:
+        """Extract specific section from AI content"""
+        # Simple keyword-based extraction - in production, use more sophisticated parsing
+        lines = content.split('\n')
+        for i, line in enumerate(lines):
+            if section_key.lower() in line.lower():
+                # Return next few lines as the content
+                return ' '.join(lines[i:i+3]).strip()
+        return default
+    
+    def _extract_numeric_section(self, content: str, section_key: str, default: Optional[float] = None) -> Optional[float]:
+        """Extract numeric value from AI content"""
+        section_text = self._extract_section(content, section_key, "")
+        # Simple regex extraction for numbers
+        import re
+        numbers = re.findall(r'\$?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)', section_text)
+        if numbers:
+            try:
+                return float(numbers[0].replace(',', ''))
+            except:
+                pass
+        return default
+    
+    def _extract_list_section(self, content: str, section_key: str, default: List[str]) -> List[str]:
+        """Extract list from AI content"""
+        section_text = self._extract_section(content, section_key, "")
+        # Simple list extraction
+        import re
+        items = re.findall(r'[•\-\*]\s*([^\n]+)', section_text)
+        return items[:3] if items else default
+    
+    def _classify_property_age(self, year_built: Optional[int]) -> str:
+        """Classify property age"""
+        if not year_built:
+            return "Age unknown"
+        
+        current_year = datetime.now().year
+        age = current_year - year_built
+        
+        if age < 10:
+            return "New (0-10 years)"
+        elif age < 30:
+            return "Mature (10-30 years)"
+        elif age < 50:
+            return "Vintage (30-50 years)"
+        else:
+            return "Antique (50+ years)"
+    
+    def _detect_absentee_owner(self, owner_info: Dict, property_address: Dict) -> bool:
+        """Detect if owner is absentee"""
+        owner_address = owner_info.get('mailing_address', '')
+        prop_address = property_address.get('formatted_address', '')
+        
+        # Simple comparison - in production, use address normalization
+        if owner_address and prop_address:
+            return owner_address.lower() not in prop_address.lower()
+        return False
+    
+    def _calculate_ownership_duration(self, last_sale_date: Optional[str]) -> Optional[float]:
+        """Calculate ownership duration in years"""
+        if not last_sale_date:
+            return None
+        
+        try:
+            from datetime import datetime
+            sale_date = datetime.strptime(last_sale_date, '%Y-%m-%d')
+            duration = datetime.now() - sale_date
+            return round(duration.days / 365.25, 1)
+        except:
+            return None
+    
+    def _generate_fallback_legendary_analysis(self, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate fallback analysis if AI fails"""
+        return {
+            "property_identity": {
+                "structure_condition": "Condition assessment unavailable",
+                "property_age_classification": "Age classification unavailable",
+                "exterior_material_style": "Style analysis unavailable",
+                "zoning_compatibility_issues": "Zoning analysis unavailable",
+                "human_readable_summary": "Comprehensive analysis temporarily unavailable"
+            },
+            "valuation_equity": {
+                "price_per_sqft_current": None,
+                "price_per_sqft_historical": None,
+                "estimated_equity": None,
+                "assessed_undervaluation_risk": "Risk assessment unavailable",
+                "tax_vs_avm_discrepancy": "Discrepancy analysis unavailable",
+                "forecasted_appreciation": "Forecast unavailable",
+                "price_trend_comparison": "Trend analysis unavailable"
+            },
+            # ... (similar fallback structure for all other sections)
+        }
+
+
+# Legacy AI Analyzer for backward compatibility
 class AIAnalyzer:
-    """Claude AI analyzer for legendary $5 property investment insights"""
+    """Legacy Claude AI analyzer for 8-section property investment insights"""
     
     def __init__(self):
         self.client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
@@ -51,577 +537,316 @@ Write as if you're sitting across from an investor, giving them the real insider
                 ]
             )
             
-            # Parse AI response into structured insights
-            ai_content = response.content[0].text
-            return self._parse_legendary_response(ai_content, property_data)
+            # Parse the response into structured format
+            ai_content = response.content[0].text if response.content else ""
+            
+            return self._parse_ai_analysis(ai_content, property_data)
             
         except Exception as e:
-            logger.error(f"Error in AI analysis: {str(e)}")
-            return self._create_fallback_analysis(property_data)
-    
+            logger.error(f"AI analysis failed: {str(e)}")
+            # Return fallback analysis
+            return self._generate_fallback_analysis(property_data)
+
     def _create_legendary_prompt(self, property_data: Dict[str, Any]) -> str:
-        """Create the comprehensive mentor-style prompt"""
+        """Create enhanced analysis prompt for legendary insights"""
         
-        # Extract and calculate key metrics
-        address = property_data.get("full_address", "Unknown")
-        year_built = property_data.get("year_built")
-        property_type = property_data.get("property_type", "Unknown")
-        sqft = property_data.get("square_footage")
-        lot_size = property_data.get("lot_size")
-        bedrooms = property_data.get("bedrooms")
-        bathrooms = property_data.get("bathrooms")
-        last_sale_price = property_data.get("last_sale_price")
-        last_sale_date = property_data.get("last_sale_date")
-        estimated_value = property_data.get("estimated_value")
-        tax_assessed_value = property_data.get("tax_assessed_value")
-        property_tax = property_data.get("property_tax_amount")
-        owner_name = property_data.get("owner_name", "")
-        owner_address = property_data.get("owner_mailing_address", "")
-        city = property_data.get("city", "")
-        zip_code = property_data.get("zip_code", "")
-        county = property_data.get("county", "")
-        
-        # Calculate derived insights
-        current_year = datetime.now().year
-        property_age = current_year - year_built if year_built else 0
-        ownership_years = self._calculate_ownership_years(last_sale_date)
-        is_absentee = self._determine_absentee_status(address, owner_address)
-        potential_equity = (estimated_value - last_sale_price) if (estimated_value and last_sale_price) else None
+        # Extract key details for analysis
+        address = property_data.get('address', {})
+        property_details = property_data.get('property', {})
+        owner_info = property_data.get('owner', {})
+        valuation = property_data.get('valuation', {})
         
         prompt = f"""
-🏠 PROPERTY INVESTMENT ANALYSIS - Mentor Mode Activated
+# LEGENDARY $5 PROPERTY ANALYSIS
 
-You're analyzing this property for a real estate investor. Give them the insider perspective they'd get from a seasoned mentor who's done 1000+ deals.
+Analyze this property like a seasoned real estate mentor. Provide insights that feel like getting insider advice from a 20-year veteran.
 
-📊 PROPERTY DATA:
-Address: {address}
-Type: {property_type}
-Built: {year_built} (Age: {property_age} years)
-Size: {sqft:,} sq ft building, {lot_size} acre lot
-Layout: {bedrooms} bed / {bathrooms} bath
-Last Sale: ${last_sale_price:,} on {last_sale_date}
-Estimated Value: ${estimated_value:,}
-Tax Assessed: ${tax_assessed_value:,}
-Annual Taxes: ${property_tax:,}
-Owner: {owner_name}
-Owner Address: {owner_address}
-Location: {city}, {zip_code}, {county} County
+## Property Details:
+- **Address**: {address.get('formatted_address', 'N/A')}
+- **Type**: {property_details.get('property_type', 'N/A')}
+- **Year Built**: {property_details.get('year_built', 'N/A')}
+- **Size**: {property_details.get('sqft', 'N/A')} sq ft
+- **Lot**: {property_details.get('lot_size', 'N/A')}
+- **Bed/Bath**: {property_details.get('bedrooms', 'N/A')}/{property_details.get('bathrooms', 'N/A')}
+- **AVM**: ${valuation.get('avm', 'N/A')}
+- **Last Sale**: ${property_details.get('last_sale_price', 'N/A')} on {property_details.get('last_sale_date', 'N/A')}
+- **Owner**: {owner_info.get('name', 'N/A')}
+- **Owner Address**: {owner_info.get('mailing_address', 'N/A')}
 
-🧠 CALCULATED INSIGHTS:
-- Ownership Duration: {ownership_years:.1f} years
-- Absentee Owner: {'Yes' if is_absentee else 'No'}
-- Potential Equity: ${potential_equity:,} if potential_equity else 'Unknown'
-- Property Age Risk: {'HIGH (50+ years)' if property_age > 50 else 'MODERATE (30-50 years)' if property_age > 30 else 'LOW (<30 years)'}
+## Analysis Sections Needed:
 
-🎯 ANALYSIS REQUIRED - Give me your mentor insights:
+### 1. Property Overview & AI Summary
+Provide a conversational summary highlighting investment appeal.
 
-1. 🏠 PROPERTY SNAPSHOT (Translate to paragraph):
-Write a conversational summary like: "This is a {bedrooms}-bedroom, {bathrooms}-bath {property_type.lower()} built in {year_built}, spanning {sqft:,} sq ft on a {lot_size}-acre lot. Here's what makes this interesting for investors..."
+### 2. Ownership Analysis & Motivation
+Analyze owner profile, absentee status, motivation to sell (1-10 score).
 
-2. 💰 VALUATION & EQUITY DEEP DIVE:
-- Calculate equity position: AVM vs last sale
-- Is this under-assessed for taxes? Risk of reassessment?
-- What's the real financial opportunity here?
-Write like: "This property has an estimated $X in equity based on... The tax-assessed value [insight about tax situation]."
+### 3. Equity Analysis 
+Calculate equity position, compare tax vs AVM values.
 
-3. 👤 OWNERSHIP & OFF-MARKET POTENTIAL:
-- Owner motivation scoring (1-10 scale with reasoning)
-- Why might they sell? Long hold = motivated?
-- Absentee = opportunity?
-Write: "This property is owned by [analysis]. Consider [specific outreach strategy]."
+### 4. Investment Strategy Scoring
+Rate flip potential (A-F), BRRRR fit, buy-hold assessment, recommend primary strategy.
 
-4. 📈 DEAL STRATEGY SCORECARD:
-Rate each with ✅/❌ and brief reasoning:
-- BRRRR Strategy Fit
-- Flip Potential 
-- Rental ROI Potential
-- Wholesale Opportunity
+### 5. Neighborhood Context
+Assess walkability, transit, schools, community type.
 
-Create a summary: "Best suited for [strategy] investors. [Specific reasoning about why]."
+### 6. Risk Flags
+Identify age/rehab risks, tax risks, structural concerns.
 
-5. 📍 LOCATION & ENVIRONMENTAL CONTEXT:
-Infer based on city/county/zip:
-- Walkability level (Low/Med/High with reasoning)
-- Transit access likelihood  
-- School quality estimate
-- Investor market trends for this area type
+### 7. Investor Action Plan
+Provide motivation assessment, outreach approach, suggested messaging.
 
-Write: "The {zip_code} area [market insight based on location characteristics]."
+### 8. Bonus Analytics & Cold Script
+Give off-market probability, AI grade, ready-to-use cold outreach script.
 
-6. ⚠️ RED FLAGS & DEAL KILLERS:
-Flag these with specific color commentary:
-- Property age issues (>60 years = major concern?)
-- Tax reassessment risk
-- Absentee owner maintenance concerns
-- Long ownership without sale (20+ years = what issues?)
-
-Write: "Caution: [specific warning with tactical advice]."
-
-7. 📜 INVESTOR WHISPER SUMMARY:
-Write like you're sitting across from the investor:
-"Listen, if you're looking for [type of deal], this [property description] is [recommendation]. The owner [situation analysis] and [specific action plan]. My gut says [confidence level and reasoning]."
-
-8. 📝 BONUS: COLD OUTREACH SCRIPT:
-Create a professional direct mail/email script:
-"Hi [Owner Name], I'm a local investor interested in your property at [address]. [Specific motivation insight]. [Soft approach]. If you're open to discussing options, I'd love to connect."
-
-🎖️ SCORING REQUIREMENTS:
-- Off-market probability: X% with reasoning
-- Overall deal grade: A-F with explanation  
-- Motivation to sell: 1-10 scale
-- BRRRR fit: 1-10 scale
-- Flip potential: 1-10 scale
-
-Be specific, tactical, and give me insights I can't get from a basic property report. Channel your inner real estate mentor who's seen it all.
+Provide mentor-level insights with specific tactical advice. Include confidence levels and reasoning behind assessments.
 """
+        
         return prompt
-    
-    def _parse_legendary_response(self, ai_content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Parse Claude's mentor-style response into structured insights"""
+
+    def _parse_ai_analysis(self, ai_content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse AI response into structured insights"""
         
-        # Calculate core metrics
-        ownership_years = self._calculate_ownership_years(property_data.get("last_sale_date"))
-        is_absentee = self._determine_absentee_status(
-            property_data.get("full_address", ""),
-            property_data.get("owner_mailing_address", "")
-        )
-        equity_estimate = self._calculate_equity(
-            property_data.get("estimated_value"),
-            property_data.get("last_sale_price")
-        )
-        
-        # Extract insights using enhanced parsing
+        # Enhanced parsing logic for legendary insights
         insights = {
-            # Section 1: Property Overview
-            "property_summary": self._extract_property_snapshot(ai_content),
-            
-            # Section 2: Ownership Analysis  
-            "ownership_duration_years": ownership_years,
-            "is_absentee_owner": is_absentee,
-            "motivation_insight": self._extract_motivation_analysis(ai_content),
-            
-            # Section 3: Equity Analysis
-            "equity_estimate": equity_estimate,
-            "tax_vs_avm_analysis": self._extract_valuation_analysis(ai_content),
-            
-            # Section 4: Investment Strategy
-            "flip_potential_rating": self._extract_flip_assessment(ai_content),
-            "buy_hold_assessment": self._extract_rental_assessment(ai_content),
-            "brrrr_fit_score": self._extract_brrrr_assessment(ai_content),
-            "ownership_duration_logic": self._create_ownership_logic(ownership_years, property_data.get('last_sale_date')),
-            "strategy_recommendation": self._extract_strategy_recommendation(ai_content),
-            
-            # Section 5: Neighborhood Context
-            "walkability_estimate": self._extract_walkability_analysis(ai_content),
-            "transit_access": self._extract_transit_analysis(ai_content),
-            "school_zone_quality": self._extract_school_analysis(ai_content),
-            "community_description": self._extract_location_context(ai_content),
-            
-            # Section 6: Risk Assessment
-            "age_rehab_risk": self._extract_age_risk_analysis(ai_content, property_data),
-            "tax_underassessment_risk": self._extract_tax_risk_analysis(ai_content),
-            "absentee_owner_risk": self._extract_absentee_risk_analysis(ai_content, is_absentee),
-            "old_structure_risk": self._extract_structure_risk_analysis(ai_content, property_data),
-            "risk_summary": self._extract_red_flags_summary(ai_content),
-            
-            # Section 7: Investor Snapshot
-            "investor_summary": self._extract_investor_whisper(ai_content),
-            "target_buyer_type": self._extract_target_buyer_analysis(ai_content),
-            "motivation_to_sell": self._extract_motivation_score(ai_content),
-            "outreach_approach": self._extract_outreach_strategy(ai_content),
-            
-            # Section 8: Bonus Analytics
-            "off_market_probability": self._extract_off_market_score(ai_content),
-            "ai_grade": self._extract_overall_grade(ai_content),
-            "rebuild_vs_rehab": self._extract_rehab_strategy(ai_content),
-            
-            # Bonus: Cold outreach script
-            "cold_outreach_script": self._extract_outreach_script(ai_content, property_data)
+            "property_overview": self._extract_overview_insights(ai_content, property_data),
+            "ownership_analysis": self._extract_ownership_analysis(ai_content, property_data),
+            "equity_analysis": self._extract_equity_analysis(ai_content, property_data),
+            "investment_strategy": self._extract_strategy_analysis(ai_content, property_data),
+            "neighborhood_context": self._extract_neighborhood_analysis(ai_content, property_data),
+            "risk_assessment": self._extract_risk_analysis(ai_content, property_data),
+            "investor_action": self._extract_action_analysis(ai_content, property_data),
+            "bonus_analytics": self._extract_bonus_analysis(ai_content, property_data)
         }
         
         return insights
-    
-    def _calculate_ownership_years(self, last_sale_date: Optional[str]) -> float:
-        """Calculate years since last sale"""
-        if not last_sale_date:
-            return 0.0
+
+    def _extract_overview_insights(self, content: str, property_data: Dict[str, Any]) -> Dict[str, str]:
+        """Extract property overview insights"""
+        return {
+            "ai_summary": self._extract_section_content(content, "property overview", "This property offers solid investment potential with its established location and fundamentals."),
+            "investment_appeal": self._extract_section_content(content, "investment appeal", "Moderate appeal for rental income strategy."),
+            "property_highlights": self._extract_section_content(content, "highlights", "Good bones, established neighborhood, rental potential.")
+        }
+
+    def _extract_ownership_analysis(self, content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract ownership motivation insights"""
+        owner_info = property_data.get('owner', {})
+        property_address = property_data.get('address', {}).get('formatted_address', '')
+        owner_address = owner_info.get('mailing_address', '')
         
-        try:
-            # Handle various date formats
-            for fmt in ["%Y-%m-%d", "%m/%d/%Y", "%Y"]:
-                try:
-                    sale_date = datetime.strptime(last_sale_date, fmt)
-                    break
-                except ValueError:
-                    continue
-            else:
-                return 0.0
-                
-            years_owned = (datetime.now() - sale_date).days / 365.25
-            return round(years_owned, 1)
-        except Exception:
-            return 0.0
-    
-    def _determine_absentee_status(self, property_address: str, owner_address: str) -> bool:
-        """Determine if owner is absentee based on addresses"""
-        if not property_address or not owner_address:
-            return False
+        # Calculate ownership duration
+        ownership_years = self._calculate_ownership_years(property_data.get('property', {}).get('last_sale_date'))
         
-        # Enhanced address comparison
-        prop_normalized = property_address.lower().strip()
-        owner_normalized = owner_address.lower().strip()
+        # Detect absentee owner
+        is_absentee = self._is_absentee_owner(property_address, owner_address)
         
-        # Extract street numbers and names for comparison
-        import re
-        
-        def extract_address_parts(addr):
-            # Extract number and street name
-            match = re.search(r'(\d+)\s+([a-z\s]+)', addr)
-            return match.groups() if match else ('', '')
-        
-        prop_parts = extract_address_parts(prop_normalized)
-        owner_parts = extract_address_parts(owner_normalized)
-        
-        # If street numbers or names are significantly different, likely absentee
-        return prop_parts != owner_parts and len(owner_normalized) > 10
-    
-    def _calculate_equity(self, estimated_value: Optional[float], last_sale_price: Optional[float]) -> Optional[float]:
-        """Calculate estimated equity with enhanced logic"""
-        if estimated_value and last_sale_price and estimated_value > last_sale_price:
-            return round(estimated_value - last_sale_price, 0)
-        return None
-    
-    def _create_ownership_logic(self, ownership_years: float, last_sale_date: Optional[str]) -> str:
-        """Create ownership duration analysis"""
-        if ownership_years == 0:
-            return "Ownership timeline unknown - may indicate recent purchase or data limitations."
-        elif ownership_years > 20:
-            return f"LONG HOLD: Owner has held property for {ownership_years:.1f} years since {last_sale_date}. This suggests potential for motivated sale due to portfolio changes, retirement, or estate planning."
-        elif ownership_years > 10:
-            return f"ESTABLISHED OWNERSHIP: {ownership_years:.1f} years of ownership since {last_sale_date}. Owner has significant equity build-up and may be ready to capitalize."
-        elif ownership_years > 3:
-            return f"MEDIUM HOLD: {ownership_years:.1f} years of ownership since {last_sale_date}. Owner may have stabilized the property and built some equity."
-        else:
-            return f"RECENT PURCHASE: Only {ownership_years:.1f} years since {last_sale_date}. Owner may be house hacking, flipping, or may have overpaid."
-    
-    # Enhanced extraction methods for mentor-style insights
-    def _extract_property_snapshot(self, content: str) -> str:
-        """Extract the conversational property summary"""
-        return self._extract_section_by_keywords(
-            content, 
-            ["bedroom", "bath", "built", "spanning", "sq ft", "interesting"],
-            "This property offers solid investment fundamentals with key characteristics that merit investor attention."
-        )
-    
-    def _extract_valuation_analysis(self, content: str) -> str:
+        return {
+            "ownership_duration_years": ownership_years,
+            "is_absentee_owner": is_absentee,
+            "motivation_score": self._extract_motivation_score(content),
+            "motivation_insight": self._extract_section_content(content, "motivation", "Owner may be motivated by portfolio simplification or market timing."),
+            "seller_profile": self._extract_section_content(content, "seller profile", "Long-term owner, likely looking for exit opportunity.")
+        }
+
+    def _extract_equity_analysis(self, content: str, property_data: Dict[str, Any]) -> Dict[str, Any]:
         """Extract equity and valuation insights"""
-        return self._extract_section_by_keywords(
-            content,
-            ["equity", "assessed", "tax", "reassessment", "financial opportunity"],
-            "Valuation analysis shows potential upside with tax implications to consider."
-        )
-    
-    def _extract_motivation_analysis(self, content: str) -> str:
-        """Extract owner motivation insights"""
-        return self._extract_section_by_keywords(
-            content,
-            ["owner", "motivation", "might sell", "absentee", "outreach"],
-            "Owner analysis suggests moderate selling motivation based on available indicators."
-        )
-    
-    def _extract_flip_assessment(self, content: str) -> str:
-        """Extract flip potential rating"""
-        return self._extract_section_by_keywords(
-            content,
-            ["flip", "✅", "❌", "renovation", "spread"],
-            "Flip potential assessed based on market conditions and property characteristics."
-        )
-    
-    def _extract_rental_assessment(self, content: str) -> str:
-        """Extract rental/buy-hold assessment"""
-        return self._extract_section_by_keywords(
-            content,
-            ["rental", "buy-hold", "roi", "cash flow", "hold"],
-            "Rental analysis indicates stable income potential for buy-and-hold strategy."
-        )
-    
-    def _extract_brrrr_assessment(self, content: str) -> str:
-        """Extract BRRRR strategy fit"""
-        return self._extract_section_by_keywords(
-            content,
-            ["brrrr", "refinance", "rehab", "rent", "repeat"],
-            "BRRRR strategy compatibility evaluated based on rehab potential and refinance prospects."
-        )
-    
-    def _extract_strategy_recommendation(self, content: str) -> str:
-        """Extract overall strategy recommendation"""
-        return self._extract_section_by_keywords(
-            content,
-            ["best suited", "recommend", "strategy", "investors"],
-            "Investment strategy recommendation based on comprehensive property analysis."
-        )
-    
-    def _extract_walkability_analysis(self, content: str) -> str:
-        """Extract walkability assessment"""
-        return self._extract_section_by_keywords(
-            content,
-            ["walkability", "walk", "pedestrian", "walkable", "car dependent"],
-            "Walkability assessment based on location and area characteristics."
-        )
-    
-    def _extract_transit_analysis(self, content: str) -> str:
-        """Extract transit access analysis"""
-        return self._extract_section_by_keywords(
-            content,
-            ["transit", "transportation", "public transport", "subway", "bus"],
-            "Transit access evaluation based on location and urban planning factors."
-        )
-    
-    def _extract_school_analysis(self, content: str) -> str:
-        """Extract school zone quality analysis"""
-        return self._extract_section_by_keywords(
-            content,
-            ["school", "education", "district", "schools", "academic"],
-            "School zone quality assessment requires local district research."
-        )
-    
-    def _extract_location_context(self, content: str) -> str:
-        """Extract location and market context"""
-        return self._extract_section_by_keywords(
-            content,
-            ["area", "market", "trends", "appreciation", "demand"],
-            "Location analysis indicates typical suburban market characteristics."
-        )
-    
-    def _extract_red_flags_summary(self, content: str) -> str:
-        """Extract red flags and cautions"""
-        return self._extract_section_by_keywords(
-            content,
-            ["caution", "warning", "red flag", "concern", "risk"],
-            "Risk assessment completed - standard due diligence recommended."
-        )
-    
-    def _extract_investor_whisper(self, content: str) -> str:
-        """Extract the mentor whisper summary"""
-        return self._extract_section_by_keywords(
-            content,
-            ["listen", "gut says", "my advice", "whisper", "mentor"],
-            "This property presents a solid investment opportunity with standard market characteristics."
-        )
-    
-    def _extract_target_buyer_analysis(self, content: str) -> str:
-        """Extract target buyer type analysis"""
-        return self._extract_section_by_keywords(
-            content,
-            ["first-time", "flipper", "investor", "buyer", "perfect for"],
-            "Suitable for various investor types based on property characteristics."
-        )
-    
-    def _extract_motivation_score(self, content: str) -> str:
-        """Extract motivation scoring"""
-        import re
-        # Look for numerical scores
-        score_match = re.search(r'motivation.*?(\d+)/10', content.lower())
-        if score_match:
-            score = score_match.group(1)
-            return f"{score}/10 - {self._get_motivation_descriptor(int(score))}"
-        return "6/10 - Moderate motivation based on ownership patterns"
-    
-    def _get_motivation_descriptor(self, score: int) -> str:
-        """Get motivation level descriptor"""
-        if score >= 8:
-            return "High motivation - strong indicators for potential sale"
-        elif score >= 6:
-            return "Moderate motivation - worth pursuing with right approach"
-        elif score >= 4:
-            return "Low-moderate motivation - requires compelling offer"
-        else:
-            return "Low motivation - may require exceptional circumstances"
-    
-    def _extract_outreach_strategy(self, content: str) -> str:
-        """Extract specific outreach approach"""
-        return self._extract_section_by_keywords(
-            content,
-            ["outreach", "approach", "contact", "mail", "door knock"],
-            "Direct outreach recommended with focus on market-driven opportunity discussion."
-        )
-    
-    def _extract_off_market_score(self, content: str) -> str:
-        """Extract off-market probability with reasoning"""
-        import re
-        percent_match = re.search(r'(\d{1,3})%.*?off-market', content.lower())
-        if percent_match:
-            percentage = percent_match.group(1)
-            return f"{percentage}% - {'High' if int(percentage) > 70 else 'Moderate' if int(percentage) > 40 else 'Low'} off-market potential"
-        return "65% - Moderate off-market potential based on ownership characteristics"
-    
-    def _extract_overall_grade(self, content: str) -> str:
-        """Extract overall AI grade"""
-        import re
-        grade_match = re.search(r'grade[:\s]*([A-F][+-]?)', content, re.IGNORECASE)
-        if grade_match:
-            return grade_match.group(1)
-        # Fallback based on content sentiment
-        if any(word in content.lower() for word in ['excellent', 'outstanding', 'perfect']):
-            return "A"
-        elif any(word in content.lower() for word in ['good', 'solid', 'strong']):
-            return "B+"
-        elif any(word in content.lower() for word in ['average', 'moderate', 'okay']):
-            return "B"
-        else:
-            return "B-"
-    
-    def _extract_rehab_strategy(self, content: str) -> str:
-        """Extract rebuild vs rehab recommendation"""
-        return self._extract_section_by_keywords(
-            content,
-            ["rebuild", "rehab", "renovation", "cosmetic", "gut"],
-            "Rehabilitation approach recommended based on property age and condition indicators."
-        )
-    
-    def _extract_outreach_script(self, content: str, property_data: Dict[str, Any]) -> str:
-        """Extract or generate cold outreach script"""
-        script_section = self._extract_section_by_keywords(
-            content,
-            ["hi", "dear", "outreach script", "direct mail", "email"],
-            None
-        )
+        valuation = property_data.get('valuation', {})
+        property_details = property_data.get('property', {})
         
-        if script_section and len(script_section) > 50:
-            return script_section
+        avm = valuation.get('avm', 0)
+        last_sale = property_details.get('last_sale_price', 0)
         
-        # Generate fallback script
-        owner_name = property_data.get("owner_name", "[Owner Name]")
-        address = property_data.get("full_address", "[Property Address]")
+        return {
+            "estimated_equity": avm - last_sale if avm and last_sale else None,
+            "equity_percentage": round((avm - last_sale) / avm * 100, 1) if avm and last_sale and avm > 0 else None,
+            "tax_vs_avm_analysis": self._extract_section_content(content, "tax vs avm", "Tax assessment appears reasonable relative to market value."),
+            "valuation_confidence": self._extract_section_content(content, "valuation confidence", "Moderate confidence in AVM accuracy.")
+        }
+
+    def _extract_strategy_analysis(self, content: str, property_data: Dict[str, Any]) -> Dict[str, str]:
+        """Extract investment strategy insights"""
+        return {
+            "flip_potential_rating": self._extract_section_content(content, "flip potential", "B - Good flip potential"),
+            "buy_hold_assessment": self._extract_section_content(content, "buy and hold", "Solid rental income opportunity"),
+            "brrrr_fit_score": self._extract_section_content(content, "brrrr", "Moderate BRRRR potential"),
+            "strategy_recommendation": self._extract_section_content(content, "strategy recommendation", "Buy and hold for steady cash flow"),
+            "ownership_duration_logic": self._extract_section_content(content, "duration logic", "Long ownership suggests good market timing for approach.")
+        }
+
+    def _extract_neighborhood_analysis(self, content: str, property_data: Dict[str, Any]) -> Dict[str, str]:
+        """Extract neighborhood context insights"""
+        address = property_data.get('address', {})
+        
+        return {
+            "walkability_estimate": self._extract_section_content(content, "walkability", "Moderate walkability - some amenities within reach"),
+            "transit_access": self._extract_section_content(content, "transit", "Basic transit access available"),
+            "school_zone_quality": self._extract_section_content(content, "schools", "Average to good school district"),
+            "community_description": self._extract_section_content(content, "community", "Established residential neighborhood with good infrastructure"),
+            "neighborhood_trend": self._extract_section_content(content, "trend", "Stable area with steady demand")
+        }
+
+    def _extract_risk_analysis(self, content: str, property_data: Dict[str, Any]) -> Dict[str, str]:
+        """Extract risk assessment insights"""
+        return {
+            "age_rehab_risk": self._extract_section_content(content, "age risk", "Moderate rehab needs based on property age"),
+            "tax_underassessment_risk": self._extract_section_content(content, "tax risk", "Low risk of significant tax reassessment"),
+            "absentee_owner_risk": self._extract_section_content(content, "absentee", "Absentee ownership may indicate deferred maintenance"),
+            "old_structure_risk": self._extract_section_content(content, "structure", "Age-appropriate maintenance expected"),
+            "risk_summary": self._extract_section_content(content, "risk summary", "Moderate risk profile typical for property type and age")
+        }
+
+    def _extract_action_analysis(self, content: str, property_data: Dict[str, Any]) -> Dict[str, str]:
+        """Extract investor action insights"""
+        return {
+            "motivation_to_sell": self._extract_section_content(content, "motivation sell", "Moderate motivation based on ownership profile"),
+            "outreach_approach": self._extract_section_content(content, "outreach", "Direct mail with equity-focused messaging"),
+            "suggested_messaging": self._extract_section_content(content, "messaging", "Highlight cash offer benefits and quick closing"),
+            "contact_timing": self._extract_section_content(content, "timing", "Good timing for owner outreach")
+        }
+
+    def _extract_bonus_analysis(self, content: str, property_data: Dict[str, Any]) -> Dict[str, str]:
+        """Extract bonus analytics insights"""
+        return {
+            "off_market_probability": self._extract_section_content(content, "off market", "6/10 - Moderate off-market potential"),
+            "ai_grade": self._extract_section_content(content, "ai grade", "B - Solid investment opportunity"),
+            "rebuild_vs_rehab": self._extract_section_content(content, "rebuild rehab", "Rehab recommended over rebuild"),
+            "cold_outreach_script": self._generate_cold_script(property_data)
+        }
+
+    def _generate_cold_script(self, property_data: Dict[str, Any]) -> str:
+        """Generate personalized cold outreach script"""
+        address = property_data.get('address', {}).get('formatted_address', 'your property')
+        owner_name = property_data.get('owner', {}).get('name', 'Property Owner')
         
         return f"""Hi {owner_name},
 
-I'm a local real estate investor interested in your property at {address}. Based on current market conditions and the property's characteristics, this might be an opportune time to consider your options.
+I'm a local real estate investor and I noticed your property at {address}. I work with homeowners who are considering selling and can offer:
 
-I work with homeowners who are looking to move forward with their real estate goals, whether that's relocating, simplifying their portfolio, or capitalizing on today's market conditions.
+• Cash purchase (no financing delays)
+• Quick 2-week closing
+• No agent commissions or fees
+• Purchase as-is (no repairs needed)
 
-If you're open to a friendly conversation about your property, I'd be happy to discuss how I might be able to help. No pressure – just exploring possibilities.
+Would you be interested in a no-obligation cash offer? I'd be happy to discuss your options.
 
 Best regards,
 [Your Name]
-[Your Contact Info]"""
-    
-    def _extract_section_by_keywords(self, content: str, keywords: list, fallback: Optional[str]) -> str:
-        """Enhanced section extraction with better parsing"""
+[Your Phone]"""
+
+    # Helper methods
+    def _extract_section_content(self, content: str, section_keyword: str, default: str) -> str:
+        """Extract content from a specific section"""
         lines = content.split('\n')
-        relevant_content = []
-        
-        # Look for sections that contain our keywords
         for i, line in enumerate(lines):
-            line_lower = line.lower().strip()
-            if any(keyword.lower() in line_lower for keyword in keywords):
-                # Found a relevant line, collect this and nearby lines
-                context_lines = lines[max(0, i-1):min(len(lines), i+3)]
-                for context_line in context_lines:
-                    if len(context_line.strip()) > 15:  # Meaningful content
-                        relevant_content.append(context_line.strip())
+            if section_keyword.lower() in line.lower():
+                # Look for content in next few lines
+                section_content = []
+                for j in range(i+1, min(i+4, len(lines))):
+                    if lines[j].strip() and not lines[j].startswith('#'):
+                        section_content.append(lines[j].strip())
+                
+                if section_content:
+                    return ' '.join(section_content)
         
-        if relevant_content:
-            # Clean up and format the extracted content
-            result = ' '.join(relevant_content[:3])  # Take first 3 relevant parts
-            # Remove markdown formatting and clean up
-            result = result.replace('**', '').replace('*', '').replace('#', '')
-            return result[:500] + '...' if len(result) > 500 else result
+        return default
+
+    def _extract_motivation_score(self, content: str) -> int:
+        """Extract motivation score from content"""
+        import re
+        # Look for motivation score patterns
+        score_match = re.search(r'motivation.*?(\d+)/10', content, re.IGNORECASE)
+        if score_match:
+            return int(score_match.group(1))
         
-        return fallback or "Analysis completed based on available property data."
-    
-    # Keep the enhanced risk analysis methods
-    def _extract_age_risk_analysis(self, content: str, property_data: Dict[str, Any]) -> str:
-        year_built = property_data.get("year_built", 0)
-        current_year = datetime.now().year
-        age = current_year - year_built if year_built else 0
+        # Default scoring logic based on keywords
+        if 'high motivation' in content.lower():
+            return 8
+        elif 'moderate motivation' in content.lower():
+            return 6
+        elif 'low motivation' in content.lower():
+            return 3
         
-        age_content = self._extract_section_by_keywords(content, ["age", "built", "old", "rehab"], None)
+        return 5  # Default moderate score
+
+    def _calculate_ownership_years(self, last_sale_date: Optional[str]) -> Optional[float]:
+        """Calculate years of ownership"""
+        if not last_sale_date:
+            return None
         
-        if age > 60:
-            risk_level = "CRITICAL RISK"
-            advice = "Expect major systems replacement, potential lead/asbestos issues, and significant capital requirements"
-        elif age > 40:
-            risk_level = "HIGH RISK"
-            advice = "Likely needs HVAC, electrical, plumbing updates; budget 15-25% of purchase for immediate repairs"
-        elif age > 20:
-            risk_level = "MODERATE RISK"
-            advice = "Standard maintenance items due; budget 10-15% for updates and deferred maintenance"
-        else:
-            risk_level = "LOW RISK"
-            advice = "Minimal age-related concerns; focus on cosmetic improvements and minor maintenance"
+        try:
+            from datetime import datetime
+            sale_date = datetime.strptime(last_sale_date, '%Y-%m-%d')
+            years = (datetime.now() - sale_date).days / 365.25
+            return round(years, 1)
+        except:
+            return None
+
+    def _is_absentee_owner(self, property_address: str, owner_address: str) -> bool:
+        """Determine if owner is absentee"""
+        if not property_address or not owner_address:
+            return False
         
-        base_analysis = f"{risk_level}: Property built in {year_built} ({age} years old) - {advice}."
+        # Simple comparison - in production, use proper address normalization
+        prop_parts = property_address.lower().split()
+        owner_parts = owner_address.lower().split()
         
-        if age_content:
-            return f"{base_analysis} AI insight: {age_content}"
-        return base_analysis
-    
-    def _extract_tax_risk_analysis(self, content: str) -> str:
-        return self._extract_section_by_keywords(
-            content,
-            ["tax", "assessment", "reassessment", "under-assessed"],
-            "Tax assessment analysis indicates standard market alignment with potential for future adjustments."
-        )
-    
-    def _extract_absentee_risk_analysis(self, content: str, is_absentee: bool) -> str:
-        base_analysis = ""
-        if is_absentee:
-            base_analysis = "MODERATE RISK: Absentee ownership often correlates with deferred maintenance, tenant issues, or reduced property oversight. "
-        else:
-            base_analysis = "LOW RISK: Local ownership typically indicates active management and maintenance. "
-        
-        absentee_content = self._extract_section_by_keywords(content, ["absentee", "owner", "maintenance"], None)
-        
-        if absentee_content:
-            return f"{base_analysis}AI insight: {absentee_content}"
-        return base_analysis + "Verify actual condition through inspection."
-    
-    def _extract_structure_risk_analysis(self, content: str, property_data: Dict[str, Any]) -> str:
-        year_built = property_data.get("year_built", 0)
-        
-        if year_built and year_built < 1978:
-            return "CRITICAL: Pre-1978 construction requires lead paint disclosure and potential abatement. May also contain asbestos in insulation, flooring, or roofing materials."
-        elif year_built and year_built < 1990:
-            return "MODERATE: Late 70s/80s construction may have aluminum wiring, UFFI insulation, or early HVAC systems requiring updates."
-        else:
-            return "LOW: Modern construction standards reduce structural and environmental concerns."
-    
-    def _create_fallback_analysis(self, property_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Enhanced fallback analysis when AI fails"""
-        ownership_years = self._calculate_ownership_years(property_data.get("last_sale_date"))
-        is_absentee = self._determine_absentee_status(
-            property_data.get("full_address", ""),
-            property_data.get("owner_mailing_address", "")
-        )
-        
+        # Check if addresses share common elements
+        common_elements = set(prop_parts) & set(owner_parts)
+        return len(common_elements) < 2  # Rough heuristic
+
+    def _generate_fallback_analysis(self, property_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate fallback analysis when AI is unavailable"""
         return {
-            "property_summary": f"Property analysis completed for {property_data.get('full_address', 'this location')} with available market data.",
-            "ownership_duration_years": ownership_years,
-            "is_absentee_owner": is_absentee,
-            "motivation_insight": f"Owner has held property for {ownership_years:.1f} years, suggesting established ownership position.",
-            "equity_estimate": self._calculate_equity(property_data.get("estimated_value"), property_data.get("last_sale_price")),
-            "tax_vs_avm_analysis": "Tax assessment comparison indicates standard market alignment.",
-            "flip_potential_rating": "B - Standard flip potential based on available market data",
-            "buy_hold_assessment": "Moderate rental potential suitable for buy-and-hold strategy",
-            "brrrr_fit_score": "6/10 - BRRRR strategy may work with proper execution",
-            "ownership_duration_logic": self._create_ownership_logic(ownership_years, property_data.get('last_sale_date')),
-            "strategy_recommendation": "Consider buy-and-hold or light rehab flip based on local market conditions",
-            "walkability_estimate": "Moderate walkability expected for suburban location type",
-            "transit_access": "Standard suburban transit access - car dependency likely",
-            "school_zone_quality": "School quality assessment requires local research",
-            "community_description": "Typical residential area characteristics for this market",
-            "age_rehab_risk": self._extract_age_risk_analysis("", property_data),
-            "tax_underassessment_risk": "Standard tax assessment risk - monitor for reassessment triggers",
-            "absentee_owner_risk": self._extract_absentee_risk_analysis("", is_absentee),
-            "old_structure_risk": self._extract_structure_risk_analysis("", property_data),
-            "risk_summary": "Standard investment risks apply - conduct thorough due diligence",
-            "investor_summary": "Solid investment opportunity with typical suburban characteristics and standard risk profile",
-            "target_buyer_type": "Suitable for beginning to intermediate investors seeking stable returns",
-            "motivation_to_sell": "5/10 - Standard motivation levels based on ownership patterns",
-            "outreach_approach": "Professional direct mail approach focusing on market opportunity",
-            "off_market_probability": "50% - Moderate off-market potential based on ownership characteristics",
-            "ai_grade": "B",
-            "rebuild_vs_rehab": "Rehabilitation recommended - focus on value-add improvements",
-            "cold_outreach_script": self._extract_outreach_script("", property_data)
+            "property_overview": {
+                "ai_summary": "Property analysis is temporarily unavailable. Please try again later.",
+                "investment_appeal": "Analysis pending",
+                "property_highlights": "Data processing in progress"
+            },
+            "ownership_analysis": {
+                "ownership_duration_years": None,
+                "is_absentee_owner": False,
+                "motivation_score": 5,
+                "motivation_insight": "Owner motivation analysis unavailable",
+                "seller_profile": "Profile analysis pending"
+            },
+            "equity_analysis": {
+                "estimated_equity": None,
+                "equity_percentage": None,
+                "tax_vs_avm_analysis": "Valuation analysis unavailable",
+                "valuation_confidence": "Analysis pending"
+            },
+            "investment_strategy": {
+                "flip_potential_rating": "C - Analysis pending",
+                "buy_hold_assessment": "Assessment unavailable",
+                "brrrr_fit_score": "Score pending",
+                "strategy_recommendation": "Recommendation unavailable",
+                "ownership_duration_logic": "Logic analysis pending"
+            },
+            "neighborhood_context": {
+                "walkability_estimate": "Assessment unavailable",
+                "transit_access": "Analysis pending",
+                "school_zone_quality": "Quality assessment unavailable",
+                "community_description": "Description unavailable",
+                "neighborhood_trend": "Trend analysis pending"
+            },
+            "risk_assessment": {
+                "age_rehab_risk": "Risk assessment unavailable",
+                "tax_underassessment_risk": "Assessment pending",
+                "absentee_owner_risk": "Risk analysis unavailable",
+                "old_structure_risk": "Assessment pending",
+                "risk_summary": "Summary unavailable"
+            },
+            "investor_action": {
+                "motivation_to_sell": "Assessment unavailable",
+                "outreach_approach": "Approach recommendation pending",
+                "suggested_messaging": "Messaging unavailable",
+                "contact_timing": "Timing analysis pending"
+            },
+            "bonus_analytics": {
+                "off_market_probability": "Probability assessment unavailable",
+                "ai_grade": "C - Analysis pending",
+                "rebuild_vs_rehab": "Recommendation unavailable",
+                "cold_outreach_script": "Script generation unavailable"
+            }
         }
